@@ -1,0 +1,23 @@
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title Zoom Clone
+        link(rel="stylesheet", href="https://unpkg.com/mvp.css")
+        link(rel="stylesheet", href="../public/css/index.css")
+        link(rel="shortcut icon", href="#")
+    body 
+        header
+            h1 Zoom Clone
+        main
+            div#stream
+                //- video 태그에 playsinline 속성을 주면, 모바일 환경에서 전체화면으로 넘어가지 않는다.
+                video#my_face(controls,playsinline,width="400",height="400")    
+                button#mute UnMute
+                button#camera Camera Off
+                select#cameras
+                    option(value="device") Face Camera
+        script(src="/socket.io/socket.io.js") 
+        script(src="/public/js/app.js") 

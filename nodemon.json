@@ -1,0 +1,5 @@
+{
+    "_comment": "nodemon은 파일상태를 바라보며, 변경사항이 있을시 서버를 재시작해주는 프로그램.server.js에 public/js/app.js 파일을 사용하도록 설정해둬서, 파일이 변경될때마다 서버가 재부팅된다. 따라서, public에 있는 파일상태변경을 무시한다.",
+    "ignore": ["src/public/*"],
+    "exec": "babel-node src/server.js"
+}
