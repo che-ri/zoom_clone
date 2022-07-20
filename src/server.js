@@ -1,7 +1,6 @@
 import http from "http";
 import { Server } from "socket.io";
 import express from "express";
-import { instrument } from "@socket.io/admin-ui";
 
 const app = express();
 
@@ -12,18 +11,22 @@ app.get("/", (req, res) => res.render("home"));
 app.get("/*", (req, res) => res.redirect("home"));
 
 const http_server = http.createServer(app);
-const io = new Server(http_server, {
-    cors: {
-        origin: ["https://admin.socket.io"],
-        credentials: true,
-    },
-});
+const io = new Server(http_server);
 
-instrument(io, {
-    auth: false,
-});
+io.on("connection", (socket) => {
+    socket.on("join_room", (payload) => {
+        socket.join(payload.room_name);
+        socket.to(payload.room_name).emit("welcome");
+    });
 
-io.on("connection", (socket) => {});
+    socket.on("offer", ({ offer, room_name }) => {
+        socket.to(room_name).emit("offer", { offer, room_name });
+    });
+
+    socket.on("answer", ({ answer, room_name }) => {
+        socket.to(room_name).emit("answer", { answer });
+    });
+});
 
 http_server.listen(3000, () =>
     console.log("listening on http://localhost:3000")

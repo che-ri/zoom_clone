@@ -1,13 +1,18 @@
 const socket = io();
 
+const $call = document.getElementById("call");
+const $welcome = document.getElementById("welcome");
 const $my_face = document.getElementById("my_face");
 const $mute_btn = document.getElementById("mute");
 const $camera_btn = document.getElementById("camera");
 const $cameras_select = document.getElementById("cameras");
 
-let stream;
+let my_stream = null;
 let is_mute = false;
 let camera_on = false;
+let room_name = null;
+let my_peer_connection = null;
+$call.hidden = true;
 
 async function getCameras() {
     try {
@@ -15,7 +20,7 @@ async function getCameras() {
         const cameras = devices.filter(
             (device) => device.kind === "videoinput"
         ); //모든 장치 중 카메라만 선별
-        const current_camera = stream.getVideoTracks()[0];
+        const current_camera = my_stream.getVideoTracks()[0];
 
         //카메라들의 정보를 select option에 넣어준다.
         cameras.forEach((camera) => {
@@ -45,10 +50,10 @@ async function getMedia(device_id) {
 
     //$my_face에 미디어 넣어주기
     try {
-        stream = await navigator.mediaDevices.getUserMedia(
+        my_stream = await navigator.mediaDevices.getUserMedia(
             device_id ? camera_constrains : initial_constrains
         );
-        $my_face.srcObject = stream;
+        $my_face.srcObject = my_stream;
 
         if (!device_id) {
             await getCameras();
@@ -59,7 +64,7 @@ async function getMedia(device_id) {
 }
 
 function handleMuteBtnClick() {
-    stream.getAudioTracks().forEach((track) => {
+    my_stream.getAudioTracks().forEach((track) => {
         track.enabled = !track.enabled;
     });
 
@@ -73,7 +78,7 @@ function handleMuteBtnClick() {
 }
 
 function handleCameraBtnClick() {
-    stream.getVideoTracks().forEach((track) => {
+    my_stream.getVideoTracks().forEach((track) => {
         track.enabled = !track.enabled;
     });
     if (camera_on) {
@@ -92,5 +97,52 @@ async function handleCameraChange() {
 $mute_btn.addEventListener("click", handleMuteBtnClick);
 $camera_btn.addEventListener("click", handleCameraBtnClick);
 $cameras_select.addEventListener("input", handleCameraChange);
+$welcome_form = $welcome.querySelector("form");
 
-getMedia();
+async function initCall() {
+    $welcome.hidden = true;
+    $call.hidden = false;
+    await getMedia();
+    makeConnection();
+}
+
+async function handleWelcomeSubmit(event) {
+    event.preventDefault();
+    const $input = $welcome_form.querySelector("input");
+    room_name = $input.value;
+    initCall().then(() => {
+        socket.emit("join_room", { room_name });
+        $input.value = "";
+    });
+}
+
+$welcome_form.addEventListener("submit", handleWelcomeSubmit);
+
+socket.on("welcome", async () => {
+    //누군가가 방에 입장할 때 이벤트 동작, offer 생성 후 로컬에 저장
+    const offer = await my_peer_connection.createOffer();
+    my_peer_connection.setLocalDescription(offer);
+    socket.emit("offer", { offer, room_name });
+});
+
+socket.on("offer", async ({ offer, room_name }) => {
+    //리모트에 오퍼 저장, answer 생성 후 로컬에 저장
+    my_peer_connection.setRemoteDescription(offer);
+    const answer = await my_peer_connection.createAnswer();
+    my_peer_connection.setLocalDescription(answer);
+    socket.emit("answer", { answer, room_name });
+});
+
+socket.on("answer", ({ answer, room_name }) => {
+    //리모트에 answer저장
+    my_peer_connection.setRemoteDescription(answer);
+});
+
+function makeConnection() {
+    my_peer_connection = new RTCPeerConnection(); //로컬과 원격 피어 간의 webRTC 연결을 담당하며, 연결 상태를 모니터링한다.
+    my_stream
+        .getTracks()
+        .forEach((track) => my_peer_connection.addTrack(track, my_stream));
+}
+
+console.log(my_peer_connection);
