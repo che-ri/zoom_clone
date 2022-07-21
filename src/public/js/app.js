@@ -138,11 +138,19 @@ socket.on("answer", ({ answer, room_name }) => {
     my_peer_connection.setRemoteDescription(answer);
 });
 
+socket.on("ice", ({ ice, room_name }) => {
+    //ice candidate를 받는 역할
+    my_peer_connection.addIceCandidate(ice);
+});
+
 function makeConnection() {
     my_peer_connection = new RTCPeerConnection(); //로컬과 원격 피어 간의 webRTC 연결을 담당하며, 연결 상태를 모니터링한다.
+    my_peer_connection.addEventListener("ice", handleIce); //ice
     my_stream
         .getTracks()
         .forEach((track) => my_peer_connection.addTrack(track, my_stream));
 }
 
-console.log(my_peer_connection);
+function handleIce(data) {
+    socket.emit("ice", { ice: data.candidate, room_name });
+}
