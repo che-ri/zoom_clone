@@ -92,6 +92,15 @@ function handleCameraBtnClick() {
 
 async function handleCameraChange() {
     await getMedia($cameras_select.value);
+
+    //sender은 peer로 보내진 media stream track을 컨트롤하게 해준다.
+    if (my_peer_connection) {
+        const video_track = my_stream.getVideoTracks()[0];
+        const video_sender = my_peer_connection
+            .getSenders()
+            .find((sender) => sender.track.kind === "video");
+        video_sender.replaceTrack(video_track);
+    }
 }
 
 $mute_btn.addEventListener("click", handleMuteBtnClick);
