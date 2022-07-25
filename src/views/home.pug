@@ -17,12 +17,15 @@ html(lang="en")
                     input(placeholder="room name",required, type="text")
                     button Enter Room
             div#call
-                div#stream
+                div#my_stream
                     //- video 태그에 playsinline 속성을 주면, 모바일 환경에서 전체화면으로 넘어가지 않는다.
-                    video#my_face(controls,playsinline,width="400",height="400")    
+                    video#my_face(autoplay,playsinline,width="400",height="400")    
                     button#mute UnMute
                     button#camera Camera Off
                     select#cameras
                         option(value="device") Face Camera
+                div#peer_stream
+                    video#peer_face(autoplay,playsinline,width="400",height="400")
+
         script(src="/socket.io/socket.io.js") 
         script(src="/public/js/app.js") 

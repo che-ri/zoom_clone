@@ -48,7 +48,7 @@ async function getMedia(device_id) {
         video: { deviceId: { exact: device_id } },
     };
 
-    //$my_face에 미디어 넣어주기
+    //$my_face에 stream src 넣어주기
     try {
         my_stream = await navigator.mediaDevices.getUserMedia(
             device_id ? camera_constrains : initial_constrains
@@ -119,38 +119,50 @@ async function handleWelcomeSubmit(event) {
 $welcome_form.addEventListener("submit", handleWelcomeSubmit);
 
 socket.on("welcome", async () => {
-    //누군가가 방에 입장할 때 이벤트 동작, offer 생성 후 로컬에 저장
+    //누군가가 방에 입장할 때 이벤트 동작
+    //offer 보내기
     const offer = await my_peer_connection.createOffer();
     my_peer_connection.setLocalDescription(offer);
     socket.emit("offer", { offer, room_name });
 });
 
 socket.on("offer", async ({ offer, room_name }) => {
-    //리모트에 오퍼 저장, answer 생성 후 로컬에 저장
+    //리모트에 offer 저장
     my_peer_connection.setRemoteDescription(offer);
+
+    //answer 보내기
     const answer = await my_peer_connection.createAnswer();
     my_peer_connection.setLocalDescription(answer);
     socket.emit("answer", { answer, room_name });
 });
 
 socket.on("answer", ({ answer, room_name }) => {
-    //리모트에 answer저장
+    //answer 받기
     my_peer_connection.setRemoteDescription(answer);
 });
 
 socket.on("ice", ({ ice, room_name }) => {
-    //ice candidate를 받는 역할
+    //ice candidate 받기
     my_peer_connection.addIceCandidate(ice);
 });
 
 function makeConnection() {
+    //RTC
     my_peer_connection = new RTCPeerConnection(); //로컬과 원격 피어 간의 webRTC 연결을 담당하며, 연결 상태를 모니터링한다.
-    my_peer_connection.addEventListener("ice", handleIce); //ice
+    my_peer_connection.addEventListener("icecandidate", handleIceCandidate); //ice candidate
+    my_peer_connection.addEventListener("addstream", handleAddStream); //add stream
     my_stream
         .getTracks()
         .forEach((track) => my_peer_connection.addTrack(track, my_stream));
 }
 
-function handleIce(data) {
+function handleIceCandidate(data) {
+    //ice candidate 보내기
     socket.emit("ice", { ice: data.candidate, room_name });
+}
+
+function handleAddStream(data) {
+    //받은 stream src를 peer_video에 넣어주기!
+    const $peer_face = document.getElementById("peer_face");
+    $peer_face.srcObject = data.stream;
 }
