@@ -157,7 +157,20 @@ socket.on("ice", ({ ice, room_name }) => {
 
 function makeConnection() {
     //RTC
-    my_peer_connection = new RTCPeerConnection(); //로컬과 원격 피어 간의 webRTC 연결을 담당하며, 연결 상태를 모니터링한다.
+    my_peer_connection = new RTCPeerConnection({
+        iceServers: [
+            {
+                urls: [
+                    //Google Stun (테스트용)
+                    "stun:stun.l.google.com:19302",
+                    "stun:stun1.l.google.com:19302",
+                    "stun:stun2.l.google.com:19302",
+                    "stun:stun3.l.google.com:19302",
+                    "stun:stun4.l.google.com:19302",
+                ],
+            },
+        ],
+    }); //로컬과 원격 피어 간의 webRTC 연결을 담당하며, 연결 상태를 모니터링한다.
     my_peer_connection.addEventListener("icecandidate", handleIceCandidate); //ice candidate
     my_peer_connection.addEventListener("addstream", handleAddStream); //add stream
     my_stream
